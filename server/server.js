@@ -1,22 +1,51 @@
-// 导入WebSocket模块:
 const WebSocket = require('ws');
+const colors = require('colors');
 
-// 引用Server类:
 const WebSocketServer = WebSocket.Server;
 
-// 实例化:
+// settings
+const port = 3445;
+
+// global
+const CREATEUSER = "/create"
+
+let chatGroup = [];
+let tempGroup = [];
+
+// new server
 const wss = new WebSocketServer({
-    port: 3445
+    port: port
 });
+console.log("Start server, listen port on: ", port);
 
 wss.on('connection', function (ws) {
-    console.log(`[SERVER] connection()`);
     ws.on('message', function (message) {
-        console.log(`[SERVER] Received: ${message}`);
-        ws.send(`ECHO: ${message}`, (err) => {
-            if (err) {
-                console.log(`[SERVER] error: ${err}`);
+        console.log(`[SERVER] Received from ${ws.name}: ${message}`);
+        let input = `${message}`;
+
+        console.log('input:', input);
+
+        // handle command
+        if (input.startsWith('/')) { // command line
+            console.log('recv cmd');
+            let cmd = input.split(' ')[0]
+            let value = input.split(' ')[1]
+            if (cmd === CREATEUSER) {
+                ws.name = value;
+                chatGroup.push(ws)
+                ws.send(`create user '${value}' success!`);
+                console.log('[SERVER] add new member');
             }
-        });
+        } else if (!ws.name) {
+            ws.send(`[hint] `.red + `you need to create a user first, just send '/create <username>', or you cannot recvice msg from others ^_^`);
+        } else { // only chat
+            chatGroup.forEach((member) => {
+                member.send(`${ws.name} : ${message}`, (err) => {
+                    if (err) {
+                        console.log(`[SERVER] error: ${err}`);
+                    }
+                });
+            })
+        }
     })
 });
