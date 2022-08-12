@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const colors = require('colors');
 
 const WebSocketServer = WebSocket.Server;
 
@@ -21,9 +22,9 @@ wss.on('connection', function (ws) {
     ws.on('message', function (message) {
         console.log(`[SERVER] Received from ${ws.name}: ${message}`);
         let input = `${message}`;
-        
+
         console.log('input:', input);
-        
+
         // handle command
         if (input.startsWith('/')) { // command line
             console.log('recv cmd');
@@ -35,6 +36,8 @@ wss.on('connection', function (ws) {
                 ws.send(`create user '${value}' success!`);
                 console.log('[SERVER] add new member');
             }
+        } else if (!ws.name) {
+            ws.send(`[hint] `.red + `you need to create a user first, just send '/create <username>', or you cannot recvice msg from others ^_^`);
         } else { // only chat
             chatGroup.forEach((member) => {
                 member.send(`${ws.name} : ${message}`, (err) => {
@@ -44,6 +47,5 @@ wss.on('connection', function (ws) {
                 });
             })
         }
-
     })
 });
